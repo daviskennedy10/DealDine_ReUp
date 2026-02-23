@@ -1,0 +1,39 @@
+# DealDine Environment Variables
+# Copy this file to .env and fill in your actual values
+
+# ============================================
+# GOOGLE OAUTH & GMAIL API
+# ============================================
+# Get these from: https://console.cloud.google.com/apis/credentials
+GOOGLE_CLIENT_ID=your_google_client_id_here.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your_google_client_secret_here
+GOOGLE_REDIRECT_URI=http://localhost:3001/auth/google/callback
+
+# ============================================
+# ANTHROPIC (CLAUDE) API
+# ============================================
+# Get your API key from: https://console.anthropic.com/
+ANTHROPIC_API_KEY=sk-ant-api03-xxxxx
+
+# ============================================
+# SUPABASE DATABASE
+# ============================================
+# Get these from: https://supabase.com/dashboard/project/_/settings/api
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your_supabase_anon_key_here
+
+# ============================================
+# EMAIL NOTIFICATIONS
+# ============================================
+# Use Gmail SMTP or any other email service
+NOTIFICATION_EMAIL=your-email@gmail.com
+NOTIFICATION_EMAIL_PASSWORD=your_app_specific_password
+
+# For Gmail: Generate app-specific password at:
+# https://myaccount.google.com/apppasswords
+
+# ============================================
+# SERVER
+# ============================================
+PORT=3001
+NODE_ENV=development

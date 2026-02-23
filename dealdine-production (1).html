@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DealDine - Your Restaurant Deals Hub</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@300;600;900&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #FF6B35;
+      --secondary: #F7931E;
+      --accent: #FDC830;
+      --dark: #1a1a2e;
+      --light: #FFFBF5;
+      --card-bg: #ffffff;
+      --shadow: rgba(255, 107, 53, 0.15);
+      --text: #2d2d2d;
+      --text-light: #666;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Work Sans', sans-serif;
+      background: linear-gradient(135deg, var(--light) 0%, #fff5e6 100%);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .app-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 3rem;
+      position: relative;
+      animation: slideDown 0.6s ease-out;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .logo {
+      font-family: 'Fraunces', serif;
+      font-size: 4rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.5rem;
+      letter-spacing: -2px;
+    }
+
+    .tagline {
+      font-size: 1.1rem;
+      color: var(--text-light);
+      font-weight: 500;
+    }
+
+    .auth-section {
+      text-align: center;
+      padding: 4rem 2rem;
+      animation: fadeIn 0.8s ease-out 0.2s both;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    .auth-card {
+      background: var(--card-bg);
+      border-radius: 24px;
+      padding: 3rem;
+      max-width: 500px;
+      margin: 0 auto;
+      box-shadow: 0 20px 60px var(--shadow);
+      border: 2px solid rgba(255, 107, 53, 0.1);
+    }
+
+    .auth-icon {
+      font-size: 4rem;
+      margin-bottom: 1.5rem;
+      animation: bounce 2s ease-in-out infinite;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    .connect-btn {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+      color: white;
+      border: none;
+      padding: 1rem 2.5rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 8px 20px rgba(255, 107, 53, 0.3);
+      font-family: 'Work Sans', sans-serif;
+      margin-top: 1rem;
+    }
+
+    .connect-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 30px rgba(255, 107, 53, 0.4);
+    }
+
+    .connect-btn:active {
+      transform: translateY(0);
+    }
+
+    .connect-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .controls {
+      background: var(--card-bg);
+      padding: 2rem;
+      border-radius: 20px;
+      margin-bottom: 2rem;
+      box-shadow: 0 10px 30px var(--shadow);
+      animation: slideUp 0.6s ease-out 0.3s both;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .scan-button {
+      background: linear-gradient(135deg, var(--accent) 0%, var(--secondary) 100%);
+      color: var(--dark);
+      border: none;
+      padding: 1rem 2rem;
+      font-size: 1rem;
+      font-weight: 700;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 6px 16px rgba(253, 200, 48, 0.4);
+      font-family: 'Work Sans', sans-serif;
+      margin-bottom: 1.5rem;
+      display: block;
+      width: 100%;
+    }
+
+    .scan-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(253, 200, 48, 0.5);
+    }
+
+    .scan-button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .filter-section {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      align-items: center;
+    }
+
+    .filter-label {
+      font-weight: 600;
+      color: var(--primary);
+      text-transform: uppercase;
+      font-size: 0.85rem;
+      letter-spacing: 1px;
+    }
+
+    .filter-group {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      flex: 1;
+    }
+
+    .filter-btn {
+      padding: 0.6rem 1.2rem;
+      border: 2px solid var(--primary);
+      background: transparent;
+      color: var(--primary);
+      border-radius: 50px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: all 0.3s ease;
+      font-family: 'Work Sans', sans-serif;
+    }
+
+    .filter-btn:hover {
+      background: rgba(255, 107, 53, 0.1);
+      transform: translateY(-2px);
+    }
+
+    .filter-btn.active {
+      background: var(--primary);
+      color: white;
+      box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+    }
+
+    .restaurant-selector {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 2px dashed rgba(255, 107, 53, 0.2);
+    }
+
+    .restaurant-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.8rem;
+    }
+
+    .restaurant-chip {
+      padding: 0.5rem 1rem;
+      border: 2px solid var(--secondary);
+      background: white;
+      border-radius: 50px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .restaurant-chip:hover {
+      background: rgba(247, 147, 30, 0.1);
+      transform: scale(1.05);
+    }
+
+    .restaurant-chip.selected {
+      background: var(--secondary);
+      color: white;
+      box-shadow: 0 4px 12px rgba(247, 147, 30, 0.3);
+    }
+
+    .deals-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 2rem;
+      animation: fadeIn 0.8s ease-out 0.5s both;
+    }
+
+    .deal-card {
+      background: var(--card-bg);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 10px 40px var(--shadow);
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      cursor: pointer;
+      border: 2px solid transparent;
+      position: relative;
+    }
+
+    .deal-card:hover {
+      transform: translateY(-8px) scale(1.02);
+      box-shadow: 0 20px 60px rgba(255, 107, 53, 0.25);
+      border-color: var(--primary);
+    }
+
+    .deal-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--primary), var(--secondary), var(--accent));
+    }
+
+    .card-image {
+      width: 100%;
+      height: 220px;
+      object-fit: cover;
+      background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+    }
+
+    .card-content {
+      padding: 1.5rem;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .restaurant-logo {
+      width: 50px;
+      height: 50px;
+      object-fit: contain;
+      background: white;
+      border-radius: 12px;
+      padding: 0.4rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .restaurant-name {
+      font-family: 'Fraunces', serif;
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: var(--dark);
+      flex: 1;
+    }
+
+    .deal-description {
+      font-size: 1rem;
+      line-height: 1.6;
+      color: var(--text);
+      margin-bottom: 1rem;
+      font-weight: 500;
+    }
+
+    .card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 1rem;
+      border-top: 2px dashed rgba(255, 107, 53, 0.2);
+    }
+
+    .expiry-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: linear-gradient(135deg, rgba(255, 107, 53, 0.1) 0%, rgba(247, 147, 30, 0.1) 100%);
+      border-radius: 50px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--primary);
+    }
+
+    .expiry-badge.expiring-soon {
+      background: linear-gradient(135deg, rgba(255, 0, 0, 0.1) 0%, rgba(255, 107, 53, 0.1) 100%);
+      color: #d32f2f;
+    }
+
+    .savings-badge {
+      padding: 0.5rem 1rem;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--secondary) 100%);
+      border-radius: 50px;
+      font-weight: 700;
+      color: var(--dark);
+      font-size: 1rem;
+      box-shadow: 0 4px 12px rgba(253, 200, 48, 0.4);
+    }
+
+    .loading {
+      text-align: center;
+      padding: 4rem 2rem;
+    }
+
+    .spinner {
+      width: 60px;
+      height: 60px;
+      border: 4px solid rgba(255, 107, 53, 0.2);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 1.5rem;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .error {
+      background: #fee;
+      border: 2px solid #fcc;
+      color: #c33;
+      padding: 1.5rem;
+      border-radius: 12px;
+      margin: 2rem 0;
+      text-align: center;
+      font-weight: 500;
+    }
+
+    .success {
+      background: #efe;
+      border: 2px solid #cfc;
+      color: #3c3;
+      padding: 1.5rem;
+      border-radius: 12px;
+      margin: 1rem 0;
+      text-align: center;
+      font-weight: 500;
+    }
+
+    .no-deals {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: var(--text-light);
+    }
+
+    .no-deals-icon {
+      font-size: 5rem;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
+
+    .stats-bar {
+      display: flex;
+      gap: 2rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+
+    .stat {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-family: 'Fraunces', serif;
+      font-size: 2rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .stat-label {
+      font-size: 0.85rem;
+      color: var(--text-light);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 600;
+    }
+
+    @media (max-width: 768px) {
+      .logo {
+        font-size: 2.5rem;
+      }
+      
+      .deals-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .filter-section {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    // Configuration
+    const API_BASE_URL = 'http://localhost:3001';
+
+    function DealDine() {
+      const [userEmail, setUserEmail] = useState(null);
+      const [deals, setDeals] = useState([]);
+      const [loading, setLoading] = useState(false);
+      const [scanning, setScanning] = useState(false);
+      const [error, setError] = useState(null);
+      const [success, setSuccess] = useState(null);
+      const [filterExpiry, setFilterExpiry] = useState('all');
+      const [filterSavings, setFilterSavings] = useState('all');
+      const [selectedRestaurants, setSelectedRestaurants] = useState([]);
+      const [allRestaurants, setAllRestaurants] = useState([]);
+
+      useEffect(() => {
+        // Check for auth success/error in URL
+        const params = new URLSearchParams(window.location.search);
+        const authStatus = params.get('auth');
+        
+        if (authStatus === 'success') {
+          setSuccess('Successfully connected to Gmail!');
+          // Get user email from localStorage or prompt
+          const email = localStorage.getItem('userEmail') || prompt('Enter your Gmail address:');
+          setUserEmail(email);
+          localStorage.setItem('userEmail', email);
+          loadDeals(email);
+        } else if (authStatus === 'error') {
+          setError('Failed to connect to Gmail. Please try again.');
+        }
+        
+        // Check if user was previously authenticated
+        const storedEmail = localStorage.getItem('userEmail');
+        if (storedEmail) {
+          setUserEmail(storedEmail);
+          loadDeals(storedEmail);
+        }
+      }, []);
+
+      const handleAuthClick = async () => {
+        try {
+          const response = await fetch(`${API_BASE_URL}/auth/google`);
+          const data = await response.json();
+          window.location.href = data.authUrl;
+        } catch (err) {
+          setError('Failed to initiate Gmail connection');
+          console.error(err);
+        }
+      };
+
+      const loadDeals = async (email) => {
+        setLoading(true);
+        setError(null);
+        
+        try {
+          const response = await fetch(`${API_BASE_URL}/api/deals/${email}`);
+          const data = await response.json();
+          
+          if (data.deals) {
+            setDeals(data.deals);
+            
+            // Extract unique restaurants
+            const restaurants = [...new Set(data.deals.map(d => d.restaurant))];
+            setAllRestaurants(restaurants);
+          }
+        } catch (err) {
+          setError('Failed to load deals. Make sure the backend is running.');
+          console.error(err);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const scanEmails = async () => {
+        setScanning(true);
+        setError(null);
+        setSuccess(null);
+        
+        try {
+          const response = await fetch(`${API_BASE_URL}/api/scan-deals`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userEmail })
+          });
+          
+          const data = await response.json();
+          
+          if (data.success) {
+            setSuccess(`Found ${data.dealsProcessed} new deals!`);
+            await loadDeals(userEmail);
+          } else {
+            setError(data.error || 'Failed to scan emails');
+          }
+        } catch (err) {
+          setError('Failed to scan emails. Make sure the backend is running.');
+          console.error(err);
+        } finally {
+          setScanning(false);
+        }
+      };
+
+      const filterDeals = () => {
+        let filtered = [...deals];
+        
+        // Filter by expiry
+        if (filterExpiry === 'expiring-soon') {
+          const threeDaysFromNow = Date.now() + 3 * 24 * 60 * 60 * 1000;
+          filtered = filtered.filter(d => d.expiry_date && new Date(d.expiry_date).getTime() < threeDaysFromNow);
+        } else if (filterExpiry === 'no-expiry') {
+          filtered = filtered.filter(d => !d.expiry_date);
+        }
+        
+        // Filter by savings
+        if (filterSavings === 'high') {
+          filtered = filtered.filter(d => d.savings >= 8);
+        } else if (filterSavings === 'medium') {
+          filtered = filtered.filter(d => d.savings >= 5 && d.savings < 8);
+        } else if (filterSavings === 'low') {
+          filtered = filtered.filter(d => d.savings < 5);
+        }
+        
+        // Filter by restaurant
+        if (selectedRestaurants.length > 0) {
+          filtered = filtered.filter(d => selectedRestaurants.includes(d.restaurant));
+        }
+        
+        return filtered;
+      };
+
+      const toggleRestaurant = (restaurant) => {
+        setSelectedRestaurants(prev => 
+          prev.includes(restaurant)
+            ? prev.filter(r => r !== restaurant)
+            : [...prev, restaurant]
+        );
+      };
+
+      const formatExpiry = (expiry) => {
+        if (!expiry) return 'N/A';
+        
+        const expiryDate = new Date(expiry);
+        const now = new Date();
+        const daysUntilExpiry = Math.ceil((expiryDate - now) / (1000 * 60 * 60 * 24));
+        
+        if (daysUntilExpiry === 0) return 'Expires today!';
+        if (daysUntilExpiry === 1) return 'Expires tomorrow';
+        if (daysUntilExpiry < 0) return 'Expired';
+        
+        return `${daysUntilExpiry} days left`;
+      };
+
+      const isExpiringSoon = (expiry) => {
+        if (!expiry) return false;
+        const daysUntilExpiry = Math.ceil((new Date(expiry) - new Date()) / (1000 * 60 * 60 * 24));
+        return daysUntilExpiry <= 3;
+      };
+
+      const calculateTotalSavings = () => {
+        return filterDeals().reduce((sum, deal) => sum + parseFloat(deal.savings), 0).toFixed(2);
+      };
+
+      const filteredDeals = filterDeals();
+
+      if (!userEmail) {
+        return (
+          <div className="app-container">
+            <div className="header">
+              <h1 className="logo">DealDine</h1>
+              <p className="tagline">Never miss a restaurant deal again</p>
+            </div>
+            
+            <div className="auth-section">
+              <div className="auth-card">
+                <div className="auth-icon">🍔</div>
+                <h2 style={{marginBottom: '1rem', fontFamily: 'Fraunces, serif', fontSize: '2rem'}}>
+                  Connect Your Gmail
+                </h2>
+                <p style={{marginBottom: '1.5rem', color: 'var(--text-light)', lineHeight: '1.6'}}>
+                  DealDine scans your promotional emails and surfaces all your restaurant deals in one beautiful place.
+                </p>
+                <button 
+                  className="connect-btn" 
+                  onClick={handleAuthClick}
+                >
+                  🔐 Connect Gmail
+                </button>
+                <p style={{marginTop: '1.5rem', fontSize: '0.85rem', color: 'var(--text-light)'}}>
+                  We only read promotional emails. Your data stays private.
+                </p>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      if (loading && deals.length === 0) {
+        return (
+          <div className="app-container">
+            <div className="header">
+              <h1 className="logo">DealDine</h1>
+            </div>
+            <div className="loading">
+              <div className="spinner"></div>
+              <p style={{fontSize: '1.2rem', color: 'var(--text-light)'}}>
+                Loading your deals...
+              </p>
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div className="app-container">
+          <div className="header">
+            <h1 className="logo">DealDine</h1>
+            <p className="tagline">Your personal restaurant deals dashboard</p>
+          </div>
+
+          {error && <div className="error">{error}</div>}
+          {success && <div className="success">{success}</div>}
+
+          <div className="controls">
+            <button 
+              className="scan-button"
+              onClick={scanEmails}
+              disabled={scanning}
+            >
+              {scanning ? '🔄 Scanning your emails...' : '📧 Scan for New Deals'}
+            </button>
+
+            <div className="stats-bar">
+              <div className="stat">
+                <div className="stat-value">{filteredDeals.length}</div>
+                <div className="stat-label">Active Deals</div>
+              </div>
+              <div className="stat">
+                <div className="stat-value">${calculateTotalSavings()}</div>
+                <div className="stat-label">Total Savings</div>
+              </div>
+              <div className="stat">
+                <div className="stat-value">{allRestaurants.length}</div>
+                <div className="stat-label">Restaurants</div>
+              </div>
+            </div>
+
+            <div className="filter-section">
+              <span className="filter-label">Expiry:</span>
+              <div className="filter-group">
+                <button 
+                  className={`filter-btn ${filterExpiry === 'all' ? 'active' : ''}`}
+                  onClick={() => setFilterExpiry('all')}
+                >
+                  All Deals
+                </button>
+                <button 
+                  className={`filter-btn ${filterExpiry === 'expiring-soon' ? 'active' : ''}`}
+                  onClick={() => setFilterExpiry('expiring-soon')}
+                >
+                  🔥 Expiring Soon
+                </button>
+                <button 
+                  className={`filter-btn ${filterExpiry === 'no-expiry' ? 'active' : ''}`}
+                  onClick={() => setFilterExpiry('no-expiry')}
+                >
+                  ♾️ No Expiry
+                </button>
+              </div>
+            </div>
+
+            <div className="filter-section">
+              <span className="filter-label">Savings:</span>
+              <div className="filter-group">
+                <button 
+                  className={`filter-btn ${filterSavings === 'all' ? 'active' : ''}`}
+                  onClick={() => setFilterSavings('all')}
+                >
+                  All Amounts
+                </button>
+                <button 
+                  className={`filter-btn ${filterSavings === 'high' ? 'active' : ''}`}
+                  onClick={() => setFilterSavings('high')}
+                >
+                  💰 $8+
+                </button>
+                <button 
+                  className={`filter-btn ${filterSavings === 'medium' ? 'active' : ''}`}
+                  onClick={() => setFilterSavings('medium')}
+                >
+                  $5-$8
+                </button>
+                <button 
+                  className={`filter-btn ${filterSavings === 'low' ? 'active' : ''}`}
+                  onClick={() => setFilterSavings('low')}
+                >
+                  Under $5
+                </button>
+              </div>
+            </div>
+
+            {allRestaurants.length > 0 && (
+              <div className="restaurant-selector">
+                <span className="filter-label">Filter by Restaurant:</span>
+                <div className="restaurant-chips">
+                  {allRestaurants.map(restaurant => (
+                    <div 
+                      key={restaurant}
+                      className={`restaurant-chip ${selectedRestaurants.includes(restaurant) ? 'selected' : ''}`}
+                      onClick={() => toggleRestaurant(restaurant)}
+                    >
+                      {selectedRestaurants.includes(restaurant) ? '✓' : '○'} {restaurant}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {filteredDeals.length === 0 ? (
+            <div className="no-deals">
+              <div className="no-deals-icon">
+                {deals.length === 0 ? '📭' : '🔍'}
+              </div>
+              <h2 style={{marginBottom: '0.5rem', fontFamily: 'Fraunces, serif'}}>
+                {deals.length === 0 ? 'No deals yet' : 'No deals match your filters'}
+              </h2>
+              <p>
+                {deals.length === 0 
+                  ? 'Click "Scan for New Deals" to find deals in your email'
+                  : 'Try adjusting your filters to see more deals'
+                }
+              </p>
+            </div>
+          ) : (
+            <div className="deals-grid">
+              {filteredDeals.map((deal, index) => (
+                <div 
+                  key={deal.id} 
+                  className="deal-card"
+                  style={{animationDelay: `${index * 0.1}s`}}
+                >
+                  {deal.image_url && (
+                    <img src={deal.image_url} alt={deal.deal_description} className="card-image" />
+                  )}
+                  <div className="card-content">
+                    <div className="card-header">
+                      {deal.logo_url && (
+                        <img src={deal.logo_url} alt={deal.restaurant} className="restaurant-logo" />
+                      )}
+                      <h3 className="restaurant-name">{deal.restaurant}</h3>
+                    </div>
+                    <p className="deal-description">{deal.deal_description}</p>
+                    <div className="card-footer">
+                      <div className={`expiry-badge ${isExpiringSoon(deal.expiry_date) ? 'expiring-soon' : ''}`}>
+                        ⏰ {formatExpiry(deal.expiry_date)}
+                      </div>
+                      <div className="savings-badge">
+                        Save ${parseFloat(deal.savings).toFixed(2)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    ReactDOM.render(<DealDine />, document.getElementById('root'));
+  </script>
+</body>
+</html>
