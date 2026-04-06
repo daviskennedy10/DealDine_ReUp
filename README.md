@@ -1,117 +1,80 @@
-# 🍔 DealDine - Quick Start
+# 🍔 DealDine — AI-Powered Restaurant Deal Intelligence
 
-Welcome to DealDine! This guide will get you up and running in **15 minutes**.
+**DealDine** is a full-stack application that scans Gmail promotional emails and automatically extracts, structures, and surfaces restaurant deals using AI.
 
-## 📦 What You Got
-
-1. **dealdine-production.html** - Frontend app (React)
-2. **dealdine-backend.js** - Backend API (Node.js/Express)
-3. **package.json** - Dependencies
-4. **.env.template** - Environment variables template
-5. **SETUP_GUIDE.md** - Detailed production setup guide
-
-## ⚡ Quick Start (5 Steps)
-
-### Step 1: Install Dependencies
-
-```bash
-npm install
-```
-
-### Step 2: Set Up Environment Variables
-
-```bash
-cp .env.template .env
-```
-
-Edit `.env` and add your credentials (see SETUP_GUIDE.md for how to get them):
-- Google OAuth credentials
-- Anthropic API key
-- Supabase credentials
-- Gmail for notifications
-
-### Step 3: Set Up Database
-
-1. Create a Supabase project at https://supabase.com
-2. Run the SQL in SETUP_GUIDE.md (section 3.2) to create tables
-3. Add Supabase URL and key to `.env`
-
-### Step 4: Start the Backend
-
-```bash
-npm run dev
-```
-
-Backend will run on http://localhost:3001
-
-### Step 5: Open the Frontend
-
-Open `dealdine-production.html` in your browser or serve it:
-
-```bash
-# Option 1: Open directly
-open dealdine-production.html
-
-# Option 2: Use a local server
-npx http-server -p 3000
-# Then visit http://localhost:3000
-```
-
-## 🎯 First Use
-
-1. Click "Connect Gmail" in the app
-2. Authorize DealDine to read your promotional emails
-3. Click "Scan for New Deals"
-4. Watch as AI finds and extracts all your restaurant deals!
-
-## 📚 Next Steps
-
-- Read **SETUP_GUIDE.md** for detailed configuration
-- Configure notifications for expiring deals
-- Customize restaurant preferences
-- Deploy to production (Railway, Vercel, etc.)
-
-## 🐛 Troubleshooting
-
-**Backend won't start?**
-- Check that all environment variables are set
-- Make sure Node.js 16+ is installed
-
-**Gmail connection fails?**
-- Verify OAuth credentials are correct
-- Check that redirect URI matches in Google Cloud Console
-
-**No deals found?**
-- Make sure you have promotional emails from restaurants
-- Check that Gmail API is enabled
-- Try manually triggering a scan
-
-**Anthropic API errors?**
-- Verify API key is correct
-- Check you have sufficient credits
-- Ensure you're using claude-sonnet-4-20250514 model
-
-## 💡 Pro Tips
-
-1. **Demo Mode**: The frontend works with mock data if backend isn't connected
-2. **Testing**: Use `/api/notifications/check` endpoint to manually test notifications
-3. **Monitoring**: Check backend logs for email parsing results
-4. **Optimization**: Cache Claude API results to reduce costs
-
-## 📧 Need Help?
-
-Check the full **SETUP_GUIDE.md** for:
-- Detailed setup instructions for each service
-- Database schema and migrations
-- Image extraction configuration
-- Notification setup
-- Deployment guides
-- Security best practices
+> Instead of manually digging through emails, DealDine turns your inbox into a personalized deal discovery engine.
 
 ---
 
-**Happy deal hunting! 🎉**
+## ✨ Why This Exists
 
+Promotional emails are noisy, unstructured, and easy to ignore — but they often contain valuable deals.
+
+DealDine solves this by:
+
+- 📧 Scanning Gmail promotions
+- 🤖 Using AI to extract structured deal data
+- 🧠 Normalizing messy real-world inputs
+- 🎯 Presenting everything in a clean, filterable dashboard
+
+---
+
+## 🚀 Key Features
+
+### 🤖 AI-Powered Deal Extraction
+- Uses **Google Gemini** to parse real-world promotional emails
+- Extracts:
+  - restaurant name
+  - deal description
+  - pricing and savings
+  - expiry dates
+  - deal types like BOGO, bundles, and fixed-price offers
+
+### 📬 Gmail Integration (OAuth)
+- Secure Google OAuth flow
+- Reads only **promotional emails**
+- Automatically fetches relevant restaurant deals
+
+### 🧠 Intelligent Data Processing
+- Normalizes inconsistent AI outputs  
+  e.g. `McDonalds` → `McDonald's`
+- Handles missing data gracefully with fallback logic
+- Filters out junk email assets like tracking pixels and spacer images
+
+### 🖼️ Smart Logo + Image Handling
+- Extracts images directly from emails
+- Filters invalid or tracking images
+- Falls back to known brand logos when needed
+
+### ⚡ Performance Optimizations
+- Email-level caching to avoid reprocessing
+- Batched AI requests to reduce overload
+- Rate-limit handling for Gemini `429` responses
+- Incremental scanning so only new emails are processed
+
+### 🎯 Clean User Experience
+- Filter deals by:
+  - expiry
+  - savings
+  - restaurant
+- Track total savings
+- View deals in a responsive card-based UI
+
+---
+
+## 🏗️ Architecture
+
+```text
+Frontend (React + CDN)
+        ↓
+GitHub Pages (Static Hosting)
+        ↓
+Backend API (Node.js / Express)
+        ↓
+Gmail API + Gemini API
+        ↓
+Supabase (PostgreSQL)
+```
 
 What your page up and running would look like
 
