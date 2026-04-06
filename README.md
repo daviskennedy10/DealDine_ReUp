@@ -6,7 +6,7 @@
 
 ---
 
-## ✨ Why This Exists
+## Why This Exists
 
 Promotional emails are noisy, unstructured, and easy to ignore — but they often contain valuable deals.
 
@@ -19,9 +19,9 @@ DealDine solves this by:
 
 ---
 
-## 🚀 Key Features
+## Key Features
 
-### 🤖 AI-Powered Deal Extraction
+### AI-Powered Deal Extraction
 - Uses **Google Gemini** to parse real-world promotional emails
 - Extracts:
   - restaurant name
@@ -30,18 +30,18 @@ DealDine solves this by:
   - expiry dates
   - deal types like BOGO, bundles, and fixed-price offers
 
-### 📬 Gmail Integration (OAuth)
+### Gmail Integration (OAuth)
 - Secure Google OAuth flow
 - Reads only **promotional emails**
 - Automatically fetches relevant restaurant deals
 
-### 🧠 Intelligent Data Processing
+### Intelligent Data Processing
 - Normalizes inconsistent AI outputs  
   e.g. `McDonalds` → `McDonald's`
 - Handles missing data gracefully with fallback logic
 - Filters out junk email assets like tracking pixels and spacer images
 
-### 🖼️ Smart Logo + Image Handling
+### Smart Logo + Image Handling
 - Extracts images directly from emails
 - Filters invalid or tracking images
 - Falls back to known brand logos when needed
@@ -52,7 +52,7 @@ DealDine solves this by:
 - Rate-limit handling for Gemini `429` responses
 - Incremental scanning so only new emails are processed
 
-### 🎯 Clean User Experience
+###  Clean User Experience
 - Filter deals by:
   - expiry
   - savings
@@ -62,7 +62,7 @@ DealDine solves this by:
 
 ---
 
-## 🏗️ Architecture
+##  Architecture
 
 ```text
 Frontend (React + CDN)
