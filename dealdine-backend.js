@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 // DealDine Backend - Production Implementation
 // This Node.js/Express backend handles Gmail API, Claude API, image extraction, database, and notifications
 
@@ -39,7 +41,7 @@ app.get('/auth/google', (req, res) => {
       'https://www.googleapis.com/auth/gmail.readonly',
       'https://www.googleapis.com/auth/userinfo.email'
     ],
-    prompt: 'consent'
+    prompt: 'consent select_account'
   });
   res.json({ authUrl });
 });
@@ -54,9 +56,10 @@ app.get('/auth/google/callback', async (req, res) => {
     
     // Store tokens in database (associated with user)
     const userEmail = await getUserEmail(oauth2Client);
+    console.log('Google account authenticated as:', userEmail);
     await storeUserTokens(userEmail, tokens);
     
-    res.redirect('http://localhost:3000?auth=success');
+    res.redirect(`http://localhost:3000?auth=success&email=${encodeURIComponent(userEmail)}`);
   } catch (error) {
     console.error('Auth error:', error);
     res.redirect('http://localhost:3000?auth=error');
@@ -115,57 +118,75 @@ async function fetchPromotionalEmails(auth, maxResults = 50) {
 }
 
 // ============================================
-// 2. CLAUDE API INTEGRATION - AI DEAL PARSING
+// 2. GEMINI INTEGRATION - AI DEAL PARSING
 // ============================================
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY
-});
 
-// Parse email content with Claude to extract deal information
-async function parseEmailWithClaude(emailContent, subject, from) {
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function getGeminiRetryDelayMs(error, fallbackMs = 60000) {
+  const details = error?.errorDetails || [];
+  const retryInfo = details.find(
+    d => d['@type'] === 'type.googleapis.com/google.rpc.RetryInfo'
+  );
+
+  const retryDelay = retryInfo?.retryDelay;
+  if (!retryDelay) return fallbackMs;
+
+  const seconds = Number(String(retryDelay).replace(/s$/, ''));
+  if (!Number.isFinite(seconds)) return fallbackMs;
+
+  return (seconds + 5) * 1000;
+}
+// Parse email content with Gemini to extract deal information
+async function parseEmailWithGemini(emailContent, subject, from) {
   try {
-    const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 2000,
-      messages: [{
-        role: 'user',
-        content: `You are a deal extraction expert. Analyze this promotional email and extract deal information.
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    
+    const prompt = `You are a deal extraction expert. Analyze this promotional email and extract deal information.
 
 EMAIL FROM: ${from}
 SUBJECT: ${subject}
 CONTENT:
 ${emailContent}
 
-Extract the following information and respond in JSON format:
+Extract the following information and respond ONLY with valid JSON (no markdown, no explanation):
 {
-  "restaurant": "Restaurant name",
+  "restaurant": "Official restaurant name (e.g., McDonald's, Subway, Chipotle — not variations)",
   "dealDescription": "Clear description of the deal/offer",
-  "originalPrice": 15.99 (number or null),
-  "discountedPrice": 7.99 (number or null),
-  "savings": 8.00 (calculated savings as number),
-  "expiryDate": "2024-02-20" (ISO date string or null if no expiry),
-  "dealCode": "SAVE50" (promo code if any, or null),
+  "originalPrice": 15.99,
+  "discountedPrice": 7.99,
+  "savings": 8.00,
+  "expiryDate": "2024-02-20",
+  "dealCode": "SAVE50",
   "termsAndConditions": "Brief terms if mentioned",
-  "dealType": "BOGO|PERCENTAGE_OFF|DOLLAR_OFF|FREE_ITEM|COMBO_DEAL"
+  "dealType": "BOGO"
 }
 
-If you cannot find certain information, use null. Be accurate and extract only what's clearly stated.`
-      }]
-    });
+Use null for any field you cannot find. Return ONLY the JSON object.`;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
     
-    // Parse Claude's response
-    const responseText = message.content[0].text;
-    
-    // Extract JSON from response (Claude might add explanation around it)
-    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    // Extract JSON from response
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       return JSON.parse(jsonMatch[0]);
     }
     
     return null;
   } catch (error) {
-    console.error('Claude parsing error:', error);
+    if (error?.status === 429) {
+      throw error;
+    }
+
+    console.error('Gemini parsing error:', error);
     return null;
   }
 }
@@ -267,30 +288,73 @@ function selectBestDealImage(images) {
   return sorted[0].url;
 }
 
-// Get restaurant logo
-function selectBestLogoImage(images, restaurantName) {
-  if (images.logoImages.length === 0) {
-    // Fallback to known logo URLs
-    return getDefaultLogoUrl(restaurantName);
-  }
-  
-  return images.logoImages[0].url;
+function normalizeRestaurantName(name) {
+  return String(name || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '');
 }
 
-// Fallback logo URLs
-function getDefaultLogoUrl(restaurantName) {
-  const logos = {
-    'McDonald\'s': 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/McDonald%27s_Golden_Arches.svg/200px-McDonald%27s_Golden_Arches.svg.png',
-    'Subway': 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Subway_2016_logo.svg/200px-Subway_2016_logo.svg.png',
-    'Domino\'s': 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/Dominos_pizza_logo.svg/200px-Dominos_pizza_logo.svg.png',
-    'Pizza Hut': 'https://upload.wikimedia.org/wikipedia/en/thumb/d/d2/Pizza_Hut_logo.svg/200px-Pizza_Hut_logo.svg.png',
-    'Taco Bell': 'https://upload.wikimedia.org/wikipedia/en/thumb/b/b3/Taco_Bell_2016.svg/200px-Taco_Bell_2016.svg.png',
-    'Chipotle': 'https://upload.wikimedia.org/wikipedia/en/thumb/3/3b/Chipotle_Mexican_Grill_logo.svg/200px-Chipotle_Mexican_Grill_logo.svg.png',
-    'KFC': 'https://upload.wikimedia.org/wikipedia/en/thumb/b/bf/KFC_logo.svg/200px-KFC_logo.svg.png',
-    'Wendy\'s': 'https://upload.wikimedia.org/wikipedia/en/thumb/5/57/Wendy%27s_full_logo_2013.svg/200px-Wendy%27s_full_logo_2013.svg.png'
+function getCanonicalRestaurantName(name) {
+  const key = normalizeRestaurantName(name);
+
+  const mapping = {
+    mcdonalds: "McDonald's",
+    subway: "Subway",
+    chipotle: "Chipotle",
+    starbucks: "Starbucks",
+    dominos: "Domino's",
+    pizzahut: "Pizza Hut",
+    tacobell: "Taco Bell",
+    kfc: "KFC",
+    wendys: "Wendy's",
+    chickfila: "Chick-fil-A",
+    popeyes: "Popeyes",
+    fiveguys: "Five Guys",
+    arbys: "Arby's",
+    sonic: "Sonic",
+    dairyqueen: "Dairy Queen"
   };
-  
-  return logos[restaurantName] || 'https://via.placeholder.com/200x200?text=Logo';
+
+  return mapping[key] || name;
+}
+
+// Get restaurant logo
+function selectBestLogoImage(images, restaurantName) {
+  if (images.logoImages.length > 0) {
+    return images.logoImages[0].url;
+  }
+
+  return getDefaultLogoUrl(restaurantName);
+}
+
+function normalizeRestaurantName(name) {
+  return String(name || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '');
+}
+
+function getDefaultLogoUrl(restaurantName) {
+  const key = normalizeRestaurantName(restaurantName);
+
+  const logos = {
+    mcdonalds: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/McDonald%27s_logo.svg/512px-McDonald%27s_logo.svg.png',
+    subway: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Subway_2016_logo.svg/512px-Subway_2016_logo.svg.png',
+    chipotle: 'https://upload.wikimedia.org/wikipedia/en/thumb/3/3b/Chipotle_Mexican_Grill_logo.svg/512px-Chipotle_Mexican_Grill_logo.svg.png',
+    starbucks: 'https://upload.wikimedia.org/wikipedia/en/thumb/7/7c/Starbucks_Coffee_Logo.svg/512px-Starbucks_Coffee_Logo.svg.png',
+    dominos: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/Dominos_pizza_logo.svg/512px-Dominos_pizza_logo.svg.png',
+    pizzahut: 'https://upload.wikimedia.org/wikipedia/en/thumb/d/d2/Pizza_Hut_logo.svg/512px-Pizza_Hut_logo.svg.png',
+    tacobell: 'https://upload.wikimedia.org/wikipedia/en/thumb/b/b3/Taco_Bell_2016.svg/512px-Taco_Bell_2016.svg.png',
+    kfc: 'https://upload.wikimedia.org/wikipedia/en/thumb/b/bf/KFC_logo.svg/512px-KFC_logo.svg.png',
+    wendys: 'https://upload.wikimedia.org/wikipedia/en/thumb/3/32/Wendy%27s_logo_2012.svg/512px-Wendy%27s_logo_2012.svg.png',
+    chickfila: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/Chick-fil-A_Logo.svg/512px-Chick-fil-A_Logo.svg.png',
+    popeyes: 'https://upload.wikimedia.org/wikipedia/en/thumb/6/6b/Popeyes_logo.svg/512px-Popeyes_logo.svg.png',
+    fiveguys: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Five_Guys_logo.svg/512px-Five_Guys_logo.svg.png',
+    arbys: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/60/Arby%27s_logo.svg/512px-Arby%27s_logo.svg.png',
+    sonic: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/Sonic_Drive-In_logo.svg/512px-Sonic_Drive-In_logo.svg.png',
+    dairyqueen: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/Dairy_Queen_logo.svg/512px-Dairy_Queen_logo.svg.png'
+  };
+
+  return logos[key] || `https://www.google.com/s2/favicons?domain=${key}.com&sz=128`;
 }
 
 // ============================================
@@ -386,7 +450,7 @@ async function saveDeal(userId, dealData) {
       deal_description: dealData.dealDescription,
       original_price: dealData.originalPrice,
       discounted_price: dealData.discountedPrice,
-      savings: dealData.savings,
+      savings: Number(dealData.savings ?? 0),
       expiry_date: dealData.expiryDate,
       deal_code: dealData.dealCode,
       terms_and_conditions: dealData.termsAndConditions,
@@ -430,6 +494,17 @@ async function getUserDeals(userId, filters = {}) {
   
   if (error) throw error;
   return data;
+}
+
+async function getProcessedEmailIds(userId) {
+  const { data, error } = await supabase
+    .from('deals')
+    .select('email_id')
+    .eq('user_id', userId);
+
+  if (error) throw error;
+
+  return new Set((data || []).map(row => row.email_id));
 }
 
 // Mark deal as inactive (used)
@@ -604,70 +679,120 @@ app.post('/api/scan-deals', async (req, res) => {
     oauth2Client.setCredentials(user.gmail_tokens);
     
     // Fetch emails
-    const emails = await fetchPromotionalEmails(oauth2Client);
+    const emails = await fetchPromotionalEmails(oauth2Client, 6);
     console.log(`Found ${emails.length} promotional emails`);
     
     const processedDeals = [];
+    const BATCH_SIZE = 2;
+    const REQUEST_DELAY_MS = 15000;
+    const BATCH_PAUSE_MS = 60000;
+
+    let rateLimited = false;
+    let retryAfterMs = 0;
+
+    const processedEmailIds = await getProcessedEmailIds(user.id);
+    console.log(`Already processed ${processedEmailIds.size} emails for this user`);
     
     // Process each email
-    for (const email of emails) {
-      try {
-        // Extract email content
-        const parts = getAllParts(email.payload);
-        let emailContent = '';
-        
-        for (const part of parts) {
-          if (part.mimeType === 'text/plain' && part.body.data) {
-            emailContent += Buffer.from(part.body.data, 'base64').toString('utf-8');
-          }
+    for (let i = 0; i < emails.length; i += BATCH_SIZE) {
+      const batch = emails.slice(i, i + BATCH_SIZE);
+
+      for (const email of batch) {
+        if (processedEmailIds.has(email.id)) {
+          console.log(`Skipping already processed email: ${email.id}`);
+          continue;
         }
-        
-        if (!emailContent) continue;
-        
-        // Get subject and from
-        const headers = email.payload.headers;
-        const subject = headers.find(h => h.name === 'Subject')?.value || '';
-        const from = headers.find(h => h.name === 'From')?.value || '';
-        
-        // Parse with Claude
-        const dealInfo = await parseEmailWithClaude(emailContent, subject, from);
-        if (!dealInfo) continue;
-        
-        // Extract images
-        const images = extractImagesFromEmail(email);
-        const imageUrl = selectBestDealImage(images);
-        const logoUrl = selectBestLogoImage(images, dealInfo.restaurant);
-        
-        // Save to database
-        const savedDeal = await saveDeal(user.id, {
-          emailId: email.id,
-          restaurant: dealInfo.restaurant,
-          dealDescription: dealInfo.dealDescription,
-          originalPrice: dealInfo.originalPrice,
-          discountedPrice: dealInfo.discountedPrice,
-          savings: dealInfo.savings,
-          expiryDate: dealInfo.expiryDate,
-          dealCode: dealInfo.dealCode,
-          termsAndConditions: dealInfo.termsAndConditions,
-          dealType: dealInfo.dealType,
-          imageUrl,
-          logoUrl
-        });
-        
-        processedDeals.push(savedDeal);
-        
-      } catch (error) {
-        console.error('Error processing email:', error);
-        continue;
+        try {
+          const parts = getAllParts(email.payload);
+          let emailContent = '';
+
+          for (const part of parts) {
+            if (part.mimeType === 'text/plain' && part.body.data) {
+              emailContent += Buffer.from(part.body.data, 'base64').toString('utf-8');
+            }
+          }
+
+          if (!emailContent) continue;
+
+          const canonicalRestaurant = getCanonicalRestaurantName(dealInfo.restaurant);
+
+          const headers = email.payload.headers;
+          const subject = headers.find(h => h.name === 'Subject')?.value || '';
+          const from = headers.find(h => h.name === 'From')?.value || '';
+
+          const dealInfo = await parseEmailWithGemini(emailContent, subject, from);
+          if (!dealInfo) continue;
+
+          const originalPrice =
+            dealInfo.originalPrice != null ? Number(dealInfo.originalPrice) : null;
+
+          const discountedPrice =
+            dealInfo.discountedPrice != null ? Number(dealInfo.discountedPrice) : null;
+
+          const computedSavings =
+            dealInfo.savings != null
+              ? Number(dealInfo.savings)
+              : originalPrice != null && discountedPrice != null
+                ? Number((originalPrice - discountedPrice).toFixed(2))
+                : 0;
+
+          const images = extractImagesFromEmail(email);
+          const imageUrl = selectBestDealImage(images);
+          const logoUrl = selectBestLogoImage(images, dealInfo.restaurant);
+
+          const savedDeal = await saveDeal(user.id, {
+            emailId: email.id,
+            restaurant: canonicalRestaurant,
+            dealDescription: dealInfo.dealDescription,
+            originalPrice,
+            discountedPrice,
+            savings: Number(dealData.savings ?? 0),
+            expiryDate: dealInfo.expiryDate,
+            dealCode: dealInfo.dealCode,
+            termsAndConditions: dealInfo.termsAndConditions,
+            dealType: dealInfo.dealType,
+            imageUrl,
+            logoUrl
+          });
+
+          processedDeals.push(savedDeal);
+          processedEmailIds.add(email.id);
+
+          // Slow down between Gemini requests
+          await sleep(REQUEST_DELAY_MS);
+        } catch (error) {
+          if (error?.status === 429) {
+            rateLimited = true;
+            retryAfterMs = getGeminiRetryDelayMs(error);
+            console.warn(
+              `Gemini rate limit hit. Pausing for ${Math.ceil(retryAfterMs / 1000)}s.`
+            );
+            break;
+          }
+
+          console.error('Error processing email:', error);
+          continue;
+        }
+      }
+
+      if (rateLimited) break;
+
+      // Pause between batches
+      if (i + BATCH_SIZE < emails.length) {
+        await sleep(BATCH_PAUSE_MS);
       }
     }
-    
+
     res.json({
       success: true,
       dealsProcessed: processedDeals.length,
-      deals: processedDeals
+      deals: processedDeals,
+      rateLimited,
+      retryAfterMs,
+      message: rateLimited
+        ? `Scan paused because Gemini hit its rate limit. Try again in ${Math.ceil(retryAfterMs / 1000)} seconds.`
+        : 'Scan complete'
     });
-    
   } catch (error) {
     console.error('Scan deals error:', error);
     res.status(500).json({ error: error.message });

@@ -181,6 +181,7 @@
       display: block;
       width: 100%;
     }
+    
 
     .scan-button:hover {
       transform: translateY(-2px);
@@ -501,6 +502,7 @@
 
     function DealDine() {
       const [userEmail, setUserEmail] = useState(null);
+      const [loggedInEmail, setLoggedInEmail] = useState(null);
       const [deals, setDeals] = useState([]);
       const [loading, setLoading] = useState(false);
       const [scanning, setScanning] = useState(false);
@@ -515,14 +517,19 @@
         // Check for auth success/error in URL
         const params = new URLSearchParams(window.location.search);
         const authStatus = params.get('auth');
-        
+        const emailFromUrl = params.get('email');
+
         if (authStatus === 'success') {
           setSuccess('Successfully connected to Gmail!');
-          // Get user email from localStorage or prompt
-          const email = localStorage.getItem('userEmail') || prompt('Enter your Gmail address:');
-          setUserEmail(email);
-          localStorage.setItem('userEmail', email);
-          loadDeals(email);
+          
+          const email = emailFromUrl || localStorage.getItem('userEmail');
+          if(email){
+            setUserEmail(email);
+            setLoggedInEmail(email);
+            localStorage.setItem('userEmail', email);
+            loadDeals(email);
+          }
+          
         } else if (authStatus === 'error') {
           setError('Failed to connect to Gmail. Please try again.');
         }
@@ -531,6 +538,7 @@
         const storedEmail = localStorage.getItem('userEmail');
         if (storedEmail) {
           setUserEmail(storedEmail);
+          setLoggedInEmail(storedEmail);
           loadDeals(storedEmail);
         }
       }, []);
@@ -544,6 +552,18 @@
           setError('Failed to initiate Gmail connection');
           console.error(err);
         }
+      };
+
+      const handleSwitchAccount = async () => {
+        localStorage.removeItem('userEmail');
+        setUserEmail(null);
+        setLoggedInEmail(null);
+        setDeals([]);
+        setAllRestaurants([]);
+        setSelectedRestaurants([]);
+        setSuccess(null);
+        setError(null);
+        await handleAuthClick();
       };
 
       const loadDeals = async (email) => {
@@ -589,6 +609,11 @@
           } else {
             setError(data.error || 'Failed to scan emails');
           }
+          if (data.rateLimited) {
+            setSuccess(data.message);
+          } else {
+            setSuccess(`Found ${data.dealsProcessed} new deals!`);
+          }
         } catch (err) {
           setError('Failed to scan emails. Make sure the backend is running.');
           console.error(err);
@@ -610,11 +635,11 @@
         
         // Filter by savings
         if (filterSavings === 'high') {
-          filtered = filtered.filter(d => d.savings >= 8);
+          filtered = filtered.filter(d => Number(d.savings || 0) >= 8);
         } else if (filterSavings === 'medium') {
-          filtered = filtered.filter(d => d.savings >= 5 && d.savings < 8);
+          filtered = filtered.filter(d => Number(d.savings || 0) >= 5 && Number(d.savings || 0) < 8);
         } else if (filterSavings === 'low') {
-          filtered = filtered.filter(d => d.savings < 5);
+          filtered = filtered.filter(d => Number(d.savings || 0) < 5);
         }
         
         // Filter by restaurant
@@ -654,7 +679,7 @@
       };
 
       const calculateTotalSavings = () => {
-        return filterDeals().reduce((sum, deal) => sum + parseFloat(deal.savings), 0).toFixed(2);
+        return filterDeals().reduce((sum, deal) => sum + Number(deal.savings || 0), 0).toFixed(2);
       };
 
       const filteredDeals = filterDeals();
@@ -712,19 +737,37 @@
           <div className="header">
             <h1 className="logo">DealDine</h1>
             <p className="tagline">Your personal restaurant deals dashboard</p>
+
+            {loggedInEmail && (
+              <p style={{ marginTop: '0.5rem', color: 'var(--text-light)' }}>
+                Connected as: <strong>{loggedInEmail}</strong>
+              </p>
+            )}
           </div>
 
           {error && <div className="error">{error}</div>}
           {success && <div className="success">{success}</div>}
 
+
           <div className="controls">
-            <button 
+          <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
+            <button
               className="scan-button"
               onClick={scanEmails}
               disabled={scanning}
+              style={{ marginBottom: 0, flex: 1 }}
             >
               {scanning ? '🔄 Scanning your emails...' : '📧 Scan for New Deals'}
             </button>
+
+            <button
+              className="connect-btn"
+              onClick={handleSwitchAccount}
+              style={{ marginTop: 0, whiteSpace: 'nowrap' }}
+            >
+              🔁 Switch Gmail
+            </button>
+          </div>
 
             <div className="stats-bar">
               <div className="stat">
@@ -852,7 +895,7 @@
                         ⏰ {formatExpiry(deal.expiry_date)}
                       </div>
                       <div className="savings-badge">
-                        Save ${parseFloat(deal.savings).toFixed(2)}
+                        Save ${Number(deal.savings || 0).toFixed(2)}
                       </div>
                     </div>
                   </div>
