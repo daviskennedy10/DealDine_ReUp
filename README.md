@@ -111,3 +111,7 @@ Check the full **SETUP_GUIDE.md** for:
 ---
 
 **Happy deal hunting! 🎉**
+
+
+What your page up and running would look like -> <img width="1197" height="683" alt="Screenshot 2026-04-06 at 01 59 40" src="https://github.com/user-attachments/assets/c21d27b7-c288-46f1-ae3b-01f61341cd26" />
+
