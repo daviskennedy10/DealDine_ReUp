@@ -113,11 +113,15 @@ Check the full **SETUP_GUIDE.md** for:
 **Happy deal hunting! 🎉**
 
 
-What your page up and running would look like **↓↓↓**
+What your page up and running would look like
+
+                                                         **↓↓↓**
 <img width="914" height="487" alt="Screenshot 2026-04-06 at 01 58 50" src="https://github.com/user-attachments/assets/c4753cff-c2c4-4db8-8ef1-c4619f78f51b" />
+
                                                           **↓↓↓**
 
 <img width="1197" height="683" alt="Screenshot 2026-04-06 at 01 59 40" src="https://github.com/user-attachments/assets/c21d27b7-c288-46f1-ae3b-01f61341cd26" />
+
                                                           **↓↓↓**
 <img width="1168" height="858" alt="Screenshot 2026-04-06 at 01 55 42" src="https://github.com/user-attachments/assets/356ca9c4-79fb-429f-8e0e-5979599961d5" />
 
